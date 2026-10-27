@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de Ponto</title>
+<style>
+:root{--azul:#2563eb;--verde:#15803d;--verdebg:#f0fdf4;--vermelho:#b91c1c;--vermelhobg:#fef2f2;--laranja:#9a5b00;--laranjabg:#fff7ed;--texto:#1f2937;--cinza:#6b7280;--borda:#dbe2ea;--fundo:#f3f6fa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fundo);font-family:"Segoe UI",Arial,sans-serif;color:var(--texto);padding:20px 12px}
+.app{width:100%;max-width:620px;margin:auto}
+.topo{text-align:center;margin-bottom:16px}.topo h1{font-size:24px;margin:0 0 5px}.topo p{margin:0;color:var(--cinza);font-size:14px}
+.card{background:#fff;border:1px solid #e5eaf0;border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 5px 16px rgba(15,23,42,.05)}
+.card h2{font-size:16px;margin:0 0 14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}
+label,.lbl{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+select{width:100%;height:44px;border:1px solid var(--borda);border-radius:8px;padding:0 11px;font-size:15px;background:#fff;color:var(--texto)}
+.hint{font-size:12px;color:var(--cinza);margin-top:5px}
+
+/* Campo de hora clicável */
+.tbtn{width:100%;height:44px;border:1px solid var(--borda);border-radius:8px;background:#fff;font-size:17px;font-weight:600;color:var(--texto);cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:0 12px}
+.tbtn.vazio{color:#9aa4b2;font-weight:400;font-size:15px}
+.tbtn:focus-visible{outline:3px solid rgba(37,99,235,.25);border-color:var(--azul)}
+.tbtn .ic{font-size:15px;opacity:.6}
+
+/* Popup do seletor */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.overlay.on{display:flex}
+.picker{background:#fff;width:100%;max-width:440px;border-radius:16px 16px 0 0;padding:16px 16px 20px;max-height:92vh;overflow:auto}
+@media(min-width:560px){.overlay{align-items:center}.picker{border-radius:16px}}
+.pk-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.pk-top b{font-size:15px}
+.pk-x{border:none;background:none;font-size:22px;cursor:pointer;color:#64748b}
+.pk-show{display:flex;align-items:center;justify-content:center;gap:12px;margin:4px 0 12px}
+.pk-show .val{font-size:40px;font-weight:800;color:var(--azul);min-width:130px;text-align:center}
+.pk-show button{width:44px;height:44px;border-radius:50%;border:1px solid #b9cdf9;background:#fff;color:var(--azul);font-size:20px;font-weight:700;cursor:pointer}
+.pk-sec{font-size:12px;font-weight:700;color:#64748b;margin:8px 0 6px;text-transform:uppercase;letter-spacing:.04em}
+.pk-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.pk-grid button{height:38px;border:1px solid #e2e8f0;background:#f8fafc;border-radius:8px;font-size:14px;cursor:pointer;color:var(--texto)}
+.pk-grid button.sel{background:var(--azul);color:#fff;border-color:var(--azul);font-weight:700}
+.pk-acoes{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px;margin-top:14px}
+.pk-acoes button{height:44px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid #cbd5e1;background:#fff;color:#334155}
+.pk-acoes .ok{background:var(--azul);color:#fff;border-color:var(--azul)}
+
+.comp-buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.comp-buttons button{height:42px;border:1px solid #b9cdf9;background:#fff;color:var(--azul);font-weight:700;border-radius:9px;cursor:pointer}
+.comp-buttons button.ativo{background:var(--azul);color:#fff;border-color:var(--azul)}
+.almoco-info{background:#f8fafc;border-radius:8px;padding:9px 11px;font-size:13px;color:#475569}
+.resultado{background:linear-gradient(135deg,#eff6ff,#f8fbff);border:1px solid #bfdbfe;border-radius:14px;padding:18px;margin-bottom:14px}
+.resultado .titulo{font-size:13px;color:#475569;margin-bottom:3px}
+.resultado .hora{font-size:38px;font-weight:800;color:var(--azul);line-height:1.1}
+.resultado .linha{margin-top:10px;font-size:14px;line-height:1.6}
+.opcoes-tit{font-size:13px;font-weight:700;color:#475569;margin:16px 0 8px}
+.opc{display:grid;grid-template-columns:70px 1fr auto;align-items:center;gap:10px;background:#fff;border:1px solid #dbeafe;border-radius:10px;padding:10px 12px;margin-bottom:6px}
+.opc .tag{font-size:13px;font-weight:700;color:var(--azul);background:#eff6ff;border-radius:6px;text-align:center;padding:4px 0}
+.opc .h{font-size:22px;font-weight:800}
+.opc .s{font-size:13px;color:#475569;text-align:right}
+.opc.bloq{opacity:.55}
+.status{margin-top:10px;padding:10px 12px;border-radius:9px;font-size:13px}
+.ok{background:var(--verdebg);color:var(--verde)}.erro{background:var(--vermelhobg);color:var(--vermelho)}.aviso{background:var(--laranjabg);color:var(--laranja)}
+.regras{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.regra{text-align:center;background:#f8fafc;border-radius:9px;padding:9px 5px;font-size:12px;color:#475569}
+.regra b{display:block;color:var(--texto);font-size:14px;margin-bottom:2px}
+.rodape{font-size:11px;color:#7c8798;text-align:center;padding:6px 14px 18px}
+@media(max-width:520px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.regras{grid-template-columns:1fr 1fr}.resultado .hora{font-size:34px}.comp-buttons{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="topo"><h1>Calculadora de Ponto</h1><p>Toque nos campos para escolher o horário</p></header>
+
+  <section class="card">
+    <h2>1. Dados de hoje</h2>
+    <div class="grid">
+      <div class="full"><label for="escala">Jornada</label>
+        <select id="escala">
+          <option value="555|1">Segunda a quinta — 9h15 trabalhadas</option>
+          <option value="320|0">Sexta curta — 5h20 (sem almoço)</option>
+          <option value="460|1">Sexta estendida — 7h40 trabalhadas</option>
+        </select></div>
+      <div><span class="lbl">Entrada de hoje</span><button type="button" class="tbtn" data-campo="entrada" data-titulo="Entrada de hoje"></button></div>
+      <div><span class="lbl">Saída de ontem</span><button type="button" class="tbtn" data-campo="saidaOntem" data-titulo="Saída de ontem"></button><div class="hint">Para conferir as 11h de descanso.</div></div>
+      <div class="full"><span class="lbl">Saldo a compensar</span><button type="button" class="tbtn" data-campo="saldo" data-titulo="Saldo a compensar" data-tipo="saldo"></button></div>
+    </div>
+  </section>
+
+  <section class="card" id="cardAlmoco">
+    <h2>2. Almoço</h2>
+    <div class="grid">
+      <div><span class="lbl">Saída para almoço</span><button type="button" class="tbtn" data-campo="saiAlm" data-titulo="Saída para almoço"></button></div>
+      <div><span class="lbl">Volta do almoço</span><button type="button" class="tbtn" data-campo="voltaAlm" data-titulo="Volta do almoço"></button></div>
+      <div class="full"><div class="almoco-info" id="almocoInfo">Sem as batidas, a calculadora considera 50 min.</div></div>
+    </div>
+  </section>
+
+  <section class="resultado" aria-live="polite">
+    <div class="titulo">Saída normal</div>
+    <div class="hora" id="horaSaida">--:--</div>
+    <div class="linha" id="detalhes">Escolha a entrada de hoje.</div>
+    <div id="opcoes"></div>
+    <div id="alertas"></div>
+  </section>
+
+  <section class="card">
+    <h2>Regras consideradas</h2>
+    <div class="regras">
+      <div class="regra"><b>Real</b>almoço (padrão 50)</div>
+      <div class="regra"><b>45 min</b>máx. compensação/dia</div>
+      <div class="regra"><b>±10 min</b>tolerância no dia</div>
+      <div class="regra"><b>11h</b>interjornada</div>
+    </div>
+  </section>
+  <div class="rodape">Estimativa para planejamento. Em caso de divergência, vale o espelho de ponto e a orientação da empresa.</div>
+</main>
+
+<!-- Seletor de horário -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="pkTitulo">
+  <div class="picker">
+    <div class="pk-top"><b id="pkTitulo">Horário</b><button type="button" class="pk-x" id="pkFechar" aria-label="Fechar">×</button></div>
+    <div class="pk-show">
+      <button type="button" id="pkMenos" aria-label="Menos 1 minuto">−</button>
+      <div class="val" id="pkVal">--:--</div>
+      <button type="button" id="pkMais" aria-label="Mais 1 minuto">+</button>
+    </div>
+    <div class="hint" style="text-align:center;margin-top:-6px">Use − e + para ajustar minuto a minuto</div>
+    <div class="pk-sec">Hora</div><div class="pk-grid" id="pkHoras"></div>
+    <div class="pk-sec">Minuto</div><div class="pk-grid" id="pkMin"></div>
+    <div class="pk-acoes">
+      <button type="button" id="pkLimpar">Limpar</button>
+      <button type="button" id="pkAgora">Agora</button>
+      <button type="button" class="ok" id="pkOk">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+  const $=id=>document.getElementById(id);
+  const ALMOCO_PADRAO=50, TOL=10, INTER=660, MAX_COMP=45, MAX_TRAB=600;
+  
+
+  // Valores em minutos (null = vazio)
+  const V={entrada:null,saidaOntem:null,saldo:4*60+28,saiAlm:null,voltaAlm:null};
+
+  const hora=n=>{n=((n%1440)+1440)%1440;return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')};
+  const dur=n=>{const s=n<0?'-':'';n=Math.abs(Math.round(n));return s+Math.floor(n/60)+'h'+String(n%60).padStart(2,'0')};
+  const escala=()=>{const[j,a]=$('escala').value.split('|');return{jornada:+j,temAlmoco:a==='1'}};
+
+  // ---------- Seletor ----------
+  let pk={campo:null,tipo:'hora',h:null,m:null};
+  const btns=document.querySelectorAll('.tbtn');
+
+  function pintarBotoes(){
+    btns.forEach(b=>{
+      const v=V[b.dataset.campo];
+      if(v===null){b.classList.add('vazio');b.innerHTML='Toque para escolher <span class="ic">🕒</span>';}
+      else{b.classList.remove('vazio');b.innerHTML=(b.dataset.tipo==='saldo'?dur(v):hora(v))+' <span class="ic">🕒</span>';}
+    });
+  }
+
+  function montarGrade(){
+    const maxH=pk.tipo==='saldo'?12:24, iniH=pk.tipo==='saldo'?0:5;
+    const hs=[];
+    for(let h=iniH;h<maxH;h++) hs.push(h);
+    if(pk.tipo!=='saldo') for(let h=0;h<iniH;h++) hs.push(h); // madrugada no fim
+    $('pkHoras').innerHTML=hs.map(h=>`<button type="button" data-h="${h}" class="${pk.h===h?'sel':''}">${pk.tipo==='saldo'?h+'h':String(h).padStart(2,'0')}</button>`).join('');
+    const ms=[];for(let m=0;m<60;m+=5) ms.push(m);
+    $('pkMin').innerHTML=ms.map(m=>`<button type="button" data-m="${m}" class="${pk.m===m?'sel':''}">${String(m).padStart(2,'0')}</button>`).join('');
+    $('pkVal').textContent=(pk.h===null?'--':(pk.tipo==='saldo'?pk.h+'h':String(pk.h).padStart(2,'0')))+(pk.tipo==='saldo'?'':':')+(pk.m===null?'--':String(pk.m).padStart(2,'0'));
+    $('pkAgora').style.visibility=pk.tipo==='saldo'?'hidden':'visible';
+  }
+
+  function abrir(b){
+    pk.campo=b.dataset.campo; pk.tipo=b.dataset.tipo||'hora';
+    $('pkTitulo').textContent=b.dataset.titulo;
+    const v=V[pk.campo];
+    if(v!==null){pk.h=Math.floor(v/60);pk.m=v%60;}
+    else{
+      // sugestão inteligente
+      const sug={entrada:7*60+10,saidaOntem:17*60+15,saiAlm:12*60,voltaAlm:(V.saiAlm!==null?V.saiAlm+50:12*60+50),saldo:0}[pk.campo];
+      pk.h=Math.floor(sug/60);pk.m=sug%60;
+    }
+    montarGrade();
+    $('overlay').classList.add('on');
+    pk.origem=b;
+  }
+  function fechar(){$('overlay').classList.remove('on');if(pk.origem)pk.origem.focus();}
+  function ajustar(d){
+    if(pk.h===null)pk.h=0; if(pk.m===null)pk.m=0;
+    const lim=pk.tipo==='saldo'?12*60:1440;
+    let t=pk.h*60+pk.m+d; t=((t%lim)+lim)%lim;
+    pk.h=Math.floor(t/60);pk.m=t%60;montarGrade();
+  }
+
+  btns.forEach(b=>b.addEventListener('click',()=>abrir(b)));
+  $('pkHoras').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;pk.h=+b.dataset.h;if(pk.m===null)pk.m=0;montarGrade();});
+  $('pkMin').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;pk.m=+b.dataset.m;if(pk.h===null)pk.h=7;montarGrade();});
+  $('pkMenos').addEventListener('click',()=>ajustar(-1));
+  $('pkMais').addEventListener('click',()=>ajustar(1));
+  $('pkAgora').addEventListener('click',()=>{const d=new Date();pk.h=d.getHours();pk.m=d.getMinutes();montarGrade();});
+  $('pkLimpar').addEventListener('click',()=>{V[pk.campo]=null;pintarBotoes();calcular();fechar();});
+  $('pkOk').addEventListener('click',()=>{if(pk.h!==null&&pk.m!==null)V[pk.campo]=pk.h*60+pk.m;pintarBotoes();calcular();fechar();});
+  $('pkFechar').addEventListener('click',fechar);
+  $('overlay').addEventListener('click',e=>{if(e.target===$('overlay'))fechar();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('overlay').classList.contains('on'))fechar();});
+
+  // ---------- Cálculo ----------
+  function almoco(){
+    const e=escala();
+    if(!e.temAlmoco) return {min:0,real:true,ok:true};
+    const s=V.saiAlm,v=V.voltaAlm;
+    if(s!==null&&v!==null){
+      if(v<=s) return {min:ALMOCO_PADRAO,real:false,ok:false};
+      return {min:v-s,real:true,ok:true};
+    }
+    return {min:ALMOCO_PADRAO,real:false,ok:true};
+  }
+
+  function calcular(){
+    const e=escala(),alm=almoco();
+    $('cardAlmoco').style.display=e.temAlmoco?'block':'none';
+    const info=$('almocoInfo');
+    if(!alm.ok) info.innerHTML='<span style="color:#b91c1c">A volta precisa ser depois da saída. Usando 50 min.</span>';
+    else if(alm.real&&e.temAlmoco) info.innerHTML=`Almoço de hoje: <b>${alm.min} min</b>`+(alm.min<ALMOCO_PADRAO?' — menor que os 50 min previstos.':'');
+    else info.textContent='Sem as batidas, a calculadora considera 50 min.';
+
+    const ent=V.entrada,saldo=V.saldo,saidaOnt=V.saidaOntem,alertas=[];
+    if(ent===null){$('horaSaida').textContent='--:--';$('detalhes').textContent='Escolha a entrada de hoje.';$('opcoes').innerHTML='';$('alertas').innerHTML='';return;}
+
+    const saidaNormal=ent+e.jornada+alm.min;
+    $('horaSaida').textContent=hora(saidaNormal);
+    let txt='';
+    if(e.temAlmoco&&!alm.real) txt+='<span style="color:#6b7280">Almoço considerado: 50 min (padrão)</span>';
+    $('detalhes').innerHTML=txt;
+
+    // Opções de compensação, todas visíveis
+    let html='';
+    if(saldo>0){
+      html+='<div class="opcoes-tit">Para compensar, saia às:</div>';
+      [15,30,45].forEach(c=>{
+        const passa10=e.jornada+c>MAX_TRAB;
+        const resta=Math.max(0,saldo-c);
+        html+=`<div class="opc${passa10?' bloq':''}"><span class="tag">+${c} min</span><span class="h">${hora(saidaNormal+c)}</span><span class="s">${passa10?'passa de 10h':(resta===0?'saldo zerado ✅':'fica '+dur(resta))}</span></div>`;
+      });
+    }else{
+      html+='<div class="status ok">Nada a compensar 🎉</div>';
+    }
+    $('opcoes').innerHTML=html;
+
+    // Interjornada de hoje
+    if(saidaOnt!==null){
+      let ij=ent-saidaOnt; if(ij<0) ij+=1440;
+      if(ij<INTER) alertas.push(`<div class="status erro">Descanso de só ${dur(ij)} desde ontem. Para respeitar as 11h, a entrada deveria ser a partir de ${hora(saidaOnt+INTER)}.</div>`);
+    }
+    // Interjornada de amanhã: só avisa se afetar a entrada padrão (07:10)
+    const saidaMax=saidaNormal+45, entAmanha=saidaMax+INTER;
+    if(entAmanha%1440>7*60+10 && entAmanha%1440<12*60) alertas.push(`<div class="status aviso">Se sair às ${hora(saidaMax)}, amanhã só pode entrar a partir de ${hora(entAmanha)}.</div>`);
+    $('alertas').innerHTML=alertas.join('');
+  }
+
+  $('escala').addEventListener('change',calcular);
+
+  if(new Date().getDay()===5) $('escala').value='320|0';
+  pintarBotoes();calcular();
+})();
+</script>
+</body>
+</html>
